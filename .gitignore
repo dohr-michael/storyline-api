@@ -1,0 +1,22 @@
+## IDEA
+/.idea/
+
+## GOLANG
+/vendor/
+vendor.tar.gz
+gin-bin
+.storyline-api.yml
+
+# GoReleaser
+dist
+
+## Project
+.tmp/
+*.zip
+*.exe
+
+## Grpc
+*.pb.go
+
+## Generated
+*.generated.go
