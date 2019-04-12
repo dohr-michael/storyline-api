@@ -48,9 +48,9 @@ func init() {
 	viper.SetDefault("https.handler", ":8443")
 	viper.SetDefault("https.keystore", "./store.key")
 	viper.SetDefault("https.cert", "./store.crt")
-	viper.SetDefault("mongo.uri", "localhost:27017")
-	viper.SetDefault("mongo.database", "storyline_cqrs")
 	viper.SetDefault("nats.uri", "nats://localhost:4222")
+	//viper.SetDefault("arango.endpoints", []string{"http://michael:azerty@localhost:8529"})
+	//viper.SetDefault("arango.database", "storyline")
 }
 
 func initConfig() {
@@ -67,9 +67,12 @@ https:
   handler: ":8443"
   keystore: "./store.key"
   cert: "./store.crt"
-mongo:
-  uri: "localhost:27017"
-  database: "storyline_cqrs"
+arango:
+  endpoints:
+  - "http://localhost:8529"
+  database: "storyline"
+  username: "michael"
+  password: "azerty"
 nats:
   uri: "nats://localhost:4222"
 `

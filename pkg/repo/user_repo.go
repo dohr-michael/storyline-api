@@ -1,20 +1,38 @@
 package repo
 
 import (
-	"context"
+	"github.com/arangodb/go-driver"
+	"github.com/dohr-michael/storyline-api/pkg/core/data"
+	"github.com/dohr-michael/storyline-api/pkg/core/data/arango"
 	"github.com/dohr-michael/storyline-api/pkg/model"
 )
 
-type UserRepo struct{}
+const UserCollection = "Users"
 
-func (r *UserRepo) FindByName(name string, ctx context.Context) (*model.User, error) {
-	return nil, nil
+type UserRepo interface {
+	data.Repository
 }
 
-func (r *UserRepo) FindByEmail(email string, ctx context.Context) (*model.User, error) {
-	return nil, nil
+func NewUserRepo() (UserRepo, error) {
+	base, err := arango.NewRepository(
+		UserCollection,
+		driver.CollectionTypeDocument,
+		func() interface{} {
+			return &model.User{}
+		}, func() interface{} {
+			return &model.Users{}
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &userRepo{
+		Repository: base,
+	}, nil
 }
 
-func (r *UserRepo) CreateUser(name string, email string, ctx context.Context) (*model.User, error) {
-	return nil, nil
+var _ = UserRepo(&userRepo{})
+
+type userRepo struct {
+	*arango.Repository
 }

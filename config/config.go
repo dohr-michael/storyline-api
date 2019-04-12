@@ -1,6 +1,15 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"github.com/arangodb/go-driver"
+	arangohttp "github.com/arangodb/go-driver/http"
+	"github.com/spf13/viper"
+)
+
+type arangoConfig struct {
+	ClientConfig *driver.ClientConfig
+	Database     string
+}
 
 var Config *config
 
@@ -38,12 +47,20 @@ func (c *config) HttpsCertFile() string {
 	return viper.GetString("https.cert")
 }
 
-func (c *config) MongoUri() string {
-	return viper.GetString("mongo.uri")
-}
-
-func (c *config) MongoDatabase() string {
-	return viper.GetString("mongo.database")
+func (c *config) Arango() (*arangoConfig, error) {
+	conn, err := arangohttp.NewConnection(arangohttp.ConnectionConfig{
+		Endpoints: viper.GetStringSlice("arango.endpoints"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &arangoConfig{
+		ClientConfig: &driver.ClientConfig{
+			Connection:     conn,
+			Authentication: driver.BasicAuthentication(viper.GetString("arango.username"), viper.GetString("arango.password")),
+		},
+		Database: viper.GetString("arango.database"),
+	}, nil
 }
 
 func (c *config) NatsUri() string {

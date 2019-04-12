@@ -1,20 +1,27 @@
 package graphql
 
-import "bytes"
+import (
+	"context"
+	"errors"
+	"github.com/dohr-michael/storyline-api/pkg/repo"
+	"github.com/graphql-go/graphql"
+)
 
-//go:generate go-bindata -ignore=\.go -pkg=graphql -o=bindata.generated.go ./...
+const (
+	UserRepoKey = "UserRepoKey"
+)
 
-func GetRootSchema() string {
-	buf := bytes.Buffer{}
-	for _, name := range AssetNames() {
-		b := MustAsset(name)
-		buf.Write(b)
-
-		// Add a newline if the file does not end in a newline.
-		if len(b) > 0 && b[len(b)-1] != '\n' {
-			buf.WriteByte('\n')
-		}
+func userRepo(ctx context.Context) (repo.UserRepo, error) {
+	res, ok := ctx.Value(UserRepoKey).(repo.UserRepo)
+	if !ok {
+		return nil, errors.New("user repo not set")
 	}
+	return res, nil
+}
 
-	return buf.String()
+func NewSchema() (graphql.Schema, error) {
+	return graphql.NewSchema(graphql.SchemaConfig{
+		Query:    query,
+		Mutation: mutation,
+	})
 }
