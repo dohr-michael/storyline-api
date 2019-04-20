@@ -18,7 +18,7 @@ variables:
   CGO_ENABLED: '0'
 
 steps:
-  - script: |
+- script: |
     mkdir -p '$(GOBIN)'
     mkdir -p '$(GOPATH)/pkg'
     mkdir -p '$(modulePath)'
@@ -27,18 +27,21 @@ steps:
     mv !(gopath) '$(modulePath)'
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
-    displayName: 'Set up the Go workspace'
+  displayName: 'Set up the Go workspace'
 
-  - script: go mod download
-    workingDirectory: '$(modulePath)'
-    displayName: 'go download dependencies'
+- script: |
+    go mod download
+  workingDirectory: '$(modulePath)'
+  displayName: 'go download dependencies'
 
-  - script: go test -v ./...
-    workingDirectory: '$(modulePath)'
-    displayName: 'Run tests'
+- script: |
+    go test -v ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run tests'
 
-  - script: go build -v -a -installsuffix cgo -s -w -X github.com/$(build.repository.name)/cmd.Version=$(Build.BuildNumber) -X github.com/$(build.repository.name)/cmd.Revision=$(Build.SourceVersion) -X github.com/$(build.repository.name)/cmd.Time=$(date +%Y-%m-%dT%H:%M:%S%z) ./...
-    workingDirectory: '$(modulePath)'
-    displayName: 'Build'
+- script: |
+    go build -v -a -installsuffix cgo -s -w -X github.com/$(build.repository.name)/cmd.Version=$(Build.BuildNumber) -X github.com/$(build.repository.name)/cmd.Revision=$(Build.SourceVersion) -X github.com/$(build.repository.name)/cmd.Time=$(date +%Y-%m-%dT%H:%M:%S%z) ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'Build'
 
 
