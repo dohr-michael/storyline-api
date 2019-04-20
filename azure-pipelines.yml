@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
 trigger:
-- master
+  - master
 
 pool:
   vmImage: 'Ubuntu-16.04'
@@ -15,12 +15,10 @@ variables:
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+  CGO_ENABLED: '0'
 
 steps:
-- task: DockerInstaller@0
-  inputs:
-    dockerVersion: '17.09.0-ce'
-- script: |
+  - script: |
     mkdir -p '$(GOBIN)'
     mkdir -p '$(GOPATH)/pkg'
     mkdir -p '$(modulePath)'
@@ -29,14 +27,18 @@ steps:
     mv !(gopath) '$(modulePath)'
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
-    echo $env
-  displayName: 'Set up the Go workspace'
+    displayName: 'Set up the Go workspace'
 
-- script: |
-    go version
-    go mod download
-    go build ./...
-  workingDirectory: '$(modulePath)'
-  displayName: 'Get dependencies, then build'
+  - script: go mod download
+    workingDirectory: '$(modulePath)'
+    displayName: 'go download dependencies'
+
+  - script: go test -v ./...
+    workingDirectory: '$(modulePath)'
+    displayName: 'Run tests'
+
+  - script: go build -v -a -installsuffix cgo -s -w -X github.com/$(build.repository.name)/cmd.Version=$(Build.BuildNumber) -X github.com/$(build.repository.name)/cmd.Revision=$(Build.SourceVersion) -X github.com/$(build.repository.name)/cmd.Time=$(date +%Y-%m-%dT%H:%M:%S%z) ./...
+    workingDirectory: '$(modulePath)'
+    displayName: 'Build'
 
 

@@ -28,7 +28,7 @@ func generate() error {
 
 func Run() error {
 	mg.Deps(downloadDeps, generate)
-	return sh.RunV("gin", "--appPort", "8080", "--buildArgs", "main.go", "-i", "run", "start")
+	return sh.RunV("gin", "--appPort", "8080", "--buildArgs", "main.go", "-i", "run")
 }
 
 func Test() error {
@@ -39,14 +39,4 @@ func Test() error {
 func Build() error {
 	mg.Deps(Test)
 	return sh.RunV("go", "build", "./...")
-}
-
-func Snapshot() error {
-	mg.Deps(Test)
-	return sh.RunV("goreleaser", "--rm-dist", "--snapshot")
-}
-
-func Release() error {
-	mg.Deps(Test)
-	return sh.RunV("goreleaser", "--rm-dist")
 }
