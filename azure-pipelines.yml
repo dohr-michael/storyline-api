@@ -36,7 +36,7 @@ steps:
 - script: |
     go mod download
     go test -v ./...
-    go build -v -a -installsuffix cgo -ldflags="-X github.com/${PROJECT_REPO}/cmd.Version=${BUILD_VERSION} -X github.com/${PROJECT_REPO}/cmd.Revision=${BUILD_REVISION} -X github.com/${PROJECT_REPO}/cmd.Time=${BUILD_TIME} -w -s" -o storyline-api
+    go build -v -a -installsuffix cgo -ldflags="-X github.com/${PROJECT_REPO}/cmd.Version=${BUILD_VERSION} -X github.com/${PROJECT_REPO}/cmd.Revision=${BUILD_REVISION} -X github.com/${PROJECT_REPO}/cmd.Time=${BUILD_TIME} -w -s" -o dist/storyline-api
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 
