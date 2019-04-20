@@ -15,6 +15,10 @@ variables:
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+  PROJECT_REPO: '$(build.repository.name)'
+  BUILD_VERSION: '$(Build.BuildNumber)'
+  BUILD_REVISION: '$(Build.SourceVersion)'
+  BUILD_TIME: '$(date +%Y-%m-%dT%H:%M:%S%z)'
   CGO_ENABLED: '0'
 
 steps:
@@ -31,17 +35,8 @@ steps:
 
 - script: |
     go mod download
-  workingDirectory: '$(modulePath)'
-  displayName: 'go download dependencies'
-
-- script: |
     go test -v ./...
+    go build -v -a -installsuffix cgo -s -w -X github.com/${PROJECT_REPO}/cmd.Version=${BUILD_VERSION} -X github.com/${PROJECT_REPO}/cmd.Revision=${BUILD_REVISION} -X github.com/${PROJECT_REPO}/cmd.Time=${BUILD_TIME} ./...
   workingDirectory: '$(modulePath)'
-  displayName: 'Run tests'
-
-- script: |
-    go build -v -a -installsuffix cgo -s -w -X github.com/$(build.repository.name)/cmd.Version=$(Build.BuildNumber) -X github.com/$(build.repository.name)/cmd.Revision=$(Build.SourceVersion) -X github.com/$(build.repository.name)/cmd.Time=$(date +%Y-%m-%dT%H:%M:%S%z) ./...
-  workingDirectory: '$(modulePath)'
-  displayName: 'Build'
-
+  displayName: 'Deps, test and build'
 
