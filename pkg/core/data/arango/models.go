@@ -1,9 +1,7 @@
 package arango
 
-import (
-	"encoding/json"
-	"time"
-)
+type QueryResult map[string]interface{}
+type QueryResults []QueryResult
 
 type Identifier struct {
 	Key    string `json:"_key" mapstructure:"_key"`
@@ -16,9 +14,37 @@ type Edge struct {
 	To   string `json:"_to" mapstructure:"_to"`
 }
 
-type Time time.Time
+type relationDirection string
 
-func (t Time) MarshalJSON() ([]byte, error) {
-	f := time.Now().UnixNano() / int64(time.Millisecond)
-	return json.Marshal(f)
+const (
+	InDirection  = relationDirection("INBOUND")
+	OutDirection = relationDirection("OUTBOUND")
+)
+
+type relationRequest struct {
+	fieldName            string
+	kind                 string
+	collection           string
+	direction            relationDirection
+	relationFieldMapping map[string]string
+}
+
+func NewRelationRequest(
+	relationCollection string,
+	fieldName string,
+	direction relationDirection,
+	kind string,
+) *relationRequest {
+	return &relationRequest{
+		fieldName:            fieldName,
+		direction:            direction,
+		kind:                 kind,
+		collection:           relationCollection,
+		relationFieldMapping: map[string]string{},
+	}
+}
+
+func (r *relationRequest) WithFieldMapping(modelId string, dataId string) *relationRequest {
+	r.relationFieldMapping[modelId] = dataId
+	return r
 }

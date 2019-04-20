@@ -2,7 +2,9 @@ module github.com/dohr-michael/storyline-api
 
 require (
 	github.com/arangodb/go-driver v0.0.0-20190408134854-544fae7debeb
-	github.com/dohr-michael/go-libs v0.1.0
+	github.com/auth0/go-jwt-middleware v0.0.0-20170425171159-5493cabe49f7
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dohr-michael/go-libs v0.7.0
 	github.com/dohrm/go-rsql v0.0.0-20181116171024-affefb5c7b4a
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/protobuf v1.3.1 // indirect

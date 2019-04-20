@@ -75,6 +75,11 @@ arango:
   password: "azerty"
 nats:
   uri: "nats://localhost:4222"
+auth:
+  iss: ""
+  jwks: ""
+  clientId: ""
+  secret: ""
 `
 			err = ioutil.WriteFile(filename, []byte(configYml), 0644)
 			if err != nil {

@@ -3,12 +3,13 @@ package pkg
 import (
 	"context"
 	"encoding/json"
-	"github.com/dohr-michael/storyline-api/config"
+	"github.com/dohr-michael/storyline-api/pkg/core"
+	"github.com/dohr-michael/storyline-api/pkg/domain/relation"
+	"github.com/dohr-michael/storyline-api/pkg/domain/universe"
+	"github.com/dohr-michael/storyline-api/pkg/domain/user"
 	"github.com/dohr-michael/storyline-api/pkg/graphql"
-	"github.com/dohr-michael/storyline-api/pkg/repo"
 	"github.com/go-chi/chi"
 	gographql "github.com/graphql-go/graphql"
-	"github.com/nats-io/go-nats"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -89,6 +90,26 @@ func newRequestOptions(r *http.Request) *requestOptions {
 	}
 }
 
+func updateConnectedUserMiddleware(repo user.Handlers) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			userContext := core.GetUserContext(ctx)
+			if userContext != nil {
+				_, err := repo.Save(&user.Save{User: userContext}, ctx)
+				if err != nil {
+					w.WriteHeader(500)
+					w.Header().Add("Content-Type", "application/json; charset=utf-8")
+					_, _ = w.Write([]byte(`{"error": "cannot update connected user"}`))
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
 func Start(
 	router chi.Router,
 ) error {
@@ -103,7 +124,7 @@ func Start(
 	})
 
 	// Initialize NATS connection.
-	nc, err := nats.Connect(config.Config.NatsUri())
+	/*nc, err := nats.Connect(config.Config.NatsUri())
 	if err != nil {
 		return err
 	}
@@ -112,36 +133,57 @@ func Start(
 	if err != nil {
 		return err
 	}
-	defer c.Drain()
+	defer c.Drain()*/
 
 	// Initialize repositories
-	userRepo, err := repo.NewUserRepo()
+
+	if _, err := relation.NewHandlers(); err != nil {
+		return err
+	}
+
+	userRepo, err := user.NewHandlers()
 	if err != nil {
 		return err
 	}
 
-	// Initialize graphql route.
+	universeRepo, err := universe.NewHandlers()
+	if err != nil {
+		return err
+	}
+
+	// Initialize graphql route and authentications.
+	auth := core.NewAuth()
 	schema, err := graphql.NewSchema()
 	if err != nil {
 		return err
 	}
-	router.Post("/", func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		// Register all repository here.
-		ctx = context.WithValue(ctx, graphql.UserRepoKey, userRepo)
+	// Protected routes.
+	authMiddleware := auth.Middleware()
+	connectedUserMiddleware := updateConnectedUserMiddleware(userRepo)
+	router.Group(func(r chi.Router) {
+		r.Use(
+			authMiddleware,
+			connectedUserMiddleware,
+		)
+		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		opts := newRequestOptions(r)
-		result := gographql.Do(gographql.Params{
-			Schema:         schema,
-			RequestString:  opts.Query,
-			VariableValues: opts.Variables,
-			OperationName:  opts.OperationName,
-			Context:        ctx,
+			opts := newRequestOptions(r)
+			ctx := r.Context()
+			// Register all repository here.
+			ctx = context.WithValue(ctx, graphql.UserRepoKey, userRepo)
+			ctx = context.WithValue(ctx, graphql.UniverseRepoKey, universeRepo)
+
+			result := gographql.Do(gographql.Params{
+				Schema:         schema,
+				RequestString:  opts.Query,
+				VariableValues: opts.Variables,
+				OperationName:  opts.OperationName,
+				Context:        ctx,
+			})
+			e := json.NewEncoder(w)
+			_ = e.Encode(result)
 		})
-		e := json.NewEncoder(w)
-		_ = e.Encode(result)
 	})
-
 	return nil
 }

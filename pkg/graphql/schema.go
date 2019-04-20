@@ -3,18 +3,28 @@ package graphql
 import (
 	"context"
 	"errors"
-	"github.com/dohr-michael/storyline-api/pkg/repo"
+	"github.com/dohr-michael/storyline-api/pkg/domain/universe"
+	"github.com/dohr-michael/storyline-api/pkg/domain/user"
 	"github.com/graphql-go/graphql"
 )
 
 const (
-	UserRepoKey = "UserRepoKey"
+	UserRepoKey     = "UserRepoKey"
+	UniverseRepoKey = "UniverseRepoKey"
 )
 
-func userRepo(ctx context.Context) (repo.UserRepo, error) {
-	res, ok := ctx.Value(UserRepoKey).(repo.UserRepo)
+func userRepo(ctx context.Context) (user.Handlers, error) {
+	res, ok := ctx.Value(UserRepoKey).(user.Handlers)
 	if !ok {
-		return nil, errors.New("user repo not set")
+		return nil, errors.New(UserRepoKey + " is not set")
+	}
+	return res, nil
+}
+
+func universeRepo(ctx context.Context) (universe.Handlers, error) {
+	res, ok := ctx.Value(UniverseRepoKey).(universe.Handlers)
+	if !ok {
+		return nil, errors.New(UniverseRepoKey + " is not set")
 	}
 	return res, nil
 }

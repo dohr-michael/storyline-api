@@ -13,10 +13,10 @@ const graphqlVoyager = `<!DOCTYPE html>
     <div id="voyager">Loading...</div>
     <script>
       function introspectionProvider(introspectionQuery) {
-        return fetch(window.location.origin + '/', {
+        return fetch(window.location.origin, {
     		method: 'post',
     		headers: { 'Content-Type': 'application/json' },
-    		body: JSON.stringify({query: query}),
+    		body: JSON.stringify({query: introspectionQuery}),
   		}).then(response => response.json());
       }
 

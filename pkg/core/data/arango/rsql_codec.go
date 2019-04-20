@@ -7,52 +7,58 @@ import (
 	"strings"
 )
 
-func expressionToFilter(prefix string, expression rsql.Expression, path string, params map[string]interface{}) string {
+type rsqlParser struct {
+	relations []string
+	mappings  map[string]string
+	variables map[string]interface{}
+}
+
+func (p *rsqlParser) expressionToFilter(prefix string, expression rsql.Expression, path string) string {
 	switch t := expression.(type) {
 	case rsql.AndExpression:
-		return listToFilter(prefix, t.Items, "and", path, params)
+		return p.listToFilter(prefix, t.Items, "and", path)
 	case rsql.OrExpression:
-		return listToFilter(prefix, t.Items, "or", path, params)
+		return p.listToFilter(prefix, t.Items, "or", path)
 	case rsql.EqualsComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "==", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "==", path)
 	case rsql.NotEqualsComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "!=", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "!=", path)
 	case rsql.LikeComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "=~", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "=~", path)
 	case rsql.NotLikeComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "!~", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "!~", path)
 	case rsql.GreaterThanComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, ">", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, ">", path)
 	case rsql.GreaterThanOrEqualsComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, ">=", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, ">=", path)
 	case rsql.LessThanComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "<", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "<", path)
 	case rsql.LessThanOrEqualsComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "<=", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "<=", path)
 	case rsql.InComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "IN", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "IN", path)
 	case rsql.NotInComparison:
-		return comparisonToFilter(prefix, t.Identifier, t.Val, "NOT IN", path, params)
+		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "NOT IN", path)
 	default:
 		return ""
 	}
 }
 
-func listToFilter(prefix string, expressions []rsql.Expression, separator string, path string, params map[string]interface{}) string {
+func (p *rsqlParser) listToFilter(prefix string, expressions []rsql.Expression, separator string, path string) string {
 	var list []string
 	for idx, expression := range expressions {
-		c := expressionToFilter(prefix, expression, path+"_"+strconv.FormatInt(int64(idx), 10), params)
+		c := p.expressionToFilter(prefix, expression, path+"_"+strconv.FormatInt(int64(idx), 10))
 		list = append(list, c)
 	}
 	return "(" + strings.Join(list, " "+separator+" ") + ")"
 }
 
-func toValue(v rsql.Value) interface{} {
+func (p *rsqlParser) toValue(v rsql.Value) interface{} {
 	switch t := v.(type) {
 	case rsql.ListValue:
 		res := make([]interface{}, 0)
 		for _, v := range t.Value {
-			res = append(res, toValue(v))
+			res = append(res, p.toValue(v))
 		}
 		return res
 	case rsql.StringValue:
@@ -72,15 +78,39 @@ func toValue(v rsql.Value) interface{} {
 	}
 }
 
-func comparisonToFilter(prefix string, field rsql.Identifier, value rsql.Value, comparator string, path string, params map[string]interface{}) string {
-	params[path] = toValue(value)
-	return fmt.Sprintf("%s.%s %s @%s", prefix, field.Val, comparator, path)
+func (p *rsqlParser) comparisonToFilter(prefix string, field rsql.Identifier, value rsql.Value, comparator string, path string) string {
+	p.variables[path] = p.toValue(value)
+	inRelation := false
+	fieldName := field.Val
+	for _, r := range p.relations {
+		if strings.HasPrefix(fieldName, r) {
+			inRelation = true
+			break
+		}
+	}
+	if p.mappings[fieldName] != "" {
+		fieldName = p.mappings[fieldName]
+	}
+	if inRelation {
+		return fmt.Sprintf("%s %s @%s", fieldName, comparator, path)
+	}
+	return fmt.Sprintf("%s.%s %s @%s", prefix, fieldName, comparator, path)
 }
 
-func RsqlToFilter(prefix string, query rsql.Expression) (string, map[string]interface{}) {
-	res := map[string]interface{}{}
-	if query == nil {
-		return "", res
+func RsqlToFilter(
+	prefix string,
+	query rsql.Expression,
+	relations []string,
+	mappings map[string]string,
+) (string, map[string]interface{}) {
+	parser := &rsqlParser{
+		relations: relations,
+		mappings:  mappings,
+		variables: make(map[string]interface{}),
 	}
-	return expressionToFilter(prefix, query, "rsql", res), res
+	if query == nil {
+		return "", parser.variables
+	}
+
+	return parser.expressionToFilter(prefix, query, "rsql"), parser.variables
 }
