@@ -30,8 +30,7 @@ steps:
 
 - script: |
     go version
-    go mode download
+    go mod download
     go build ./...
-    mage build
   workingDirectory: '$(modulePath)'
   displayName: 'Get dependencies, then build'
