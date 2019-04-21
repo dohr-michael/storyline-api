@@ -40,3 +40,13 @@ func Build() error {
 	mg.Deps(Test)
 	return sh.RunV("go", "build", "./...")
 }
+
+func Snapshot() error {
+	mg.Deps(Test)
+	return sh.RunV("goreleaser", "--rm-dist", "--snapshot")
+}
+
+func Release() error {
+	mg.Deps(Test)
+	return sh.RunV("goreleaser", "--rm-dist")
+}
