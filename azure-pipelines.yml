@@ -40,7 +40,7 @@ steps:
     destinationFolder: ${GORELEASER_PATH}
     cleanDestinationFolder: false
 - script: |
-    ${GORELEASER_PATH}./goreleaser --rm-dist --snapshot
+    ${GORELEASER_PATH}/./goreleaser --rm-dist --snapshot
     ls -lsa
     ls -lsa dist
   workingDirectory: '$(modulePath)'
