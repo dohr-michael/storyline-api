@@ -15,13 +15,11 @@ variables:
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
-  GORELEASER_PATH: '$(System.ArtifactsDirectory)'
 steps:
 - script: |
     mkdir -p '$(GOBIN)'
     mkdir -p '$(GOPATH)/pkg'
     mkdir -p '$(modulePath)'
-    mkdir -p '$(modulePath)/dist'
     shopt -s extglob
     shopt -s dotglob
     mv !(gopath) '$(modulePath)'
@@ -33,14 +31,14 @@ steps:
     connection: github-download
     userRepository: goreleaser/goreleaser
     itemPattern: goreleaser_Linux_x86_64.tar.gz
-    downloadPath: ${GORELEASER_PATH}
+    downloadPath: $(GOPATH)/bin
 - task: ExtractFiles@1
   inputs:
-    archiveFilePatterns: ${GORELEASER_PATH}/goreleaser_Linux_x86_64.tar.gz
-    destinationFolder: ${GORELEASER_PATH}
+    archiveFilePatterns: $(GOPATH)/bin/goreleaser_Linux_x86_64.tar.gz
+    destinationFolder: $(GOPATH)/bin
     cleanDestinationFolder: false
 - script: |
-    ${GORELEASER_PATH}/./goreleaser --rm-dist --snapshot
+    goreleaser --rm-dist --snapshot
     ls -lsa
     ls -lsa dist
   workingDirectory: '$(modulePath)'
