@@ -38,7 +38,8 @@ steps:
     go mod download
     go test -v ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/${PROJECT_REPO}/cmd.Version=${BUILD_VERSION} -X github.com/${PROJECT_REPO}/cmd.Revision=${BUILD_REVISION} -X github.com/${PROJECT_REPO}/cmd.Time=${BUILD_TIME}"
-    ls
+    ls -lsa
+    ls -lsa dist
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 
