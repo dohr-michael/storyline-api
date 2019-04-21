@@ -39,6 +39,11 @@ steps:
     userRepository: goreleaser/goreleaser
     itemPattern: goreleaser_Linux_x86_64.tar.gz
     downloadPath: $(modulePath)
+- task: ExtractFiles@1
+  inputs:
+    archiveFilePatterns: 'goreleaser_Linux_x86_64.tar.gz'
+    destinationFolder: '.'
+    cleanDestinationFolder: false
 - script: |
     ls
     go mod download
