@@ -39,8 +39,7 @@ steps:
     cleanDestinationFolder: false
 - script: |
     goreleaser --rm-dist --snapshot
-    ls -lsa
-    ls -lsa dist
+    cp ./dist/linux_amd64/* '$(System.ArtifactsDirectory)'
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 
