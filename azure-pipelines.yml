@@ -40,6 +40,8 @@ steps:
 - script: |
     goreleaser --rm-dist --snapshot
     cp ./dist/linux_amd64/* '$(System.ArtifactsDirectory)'
+    echo '$(System.ArtifactsDirectory)'
+    ls '$(System.ArtifactsDirectory)'
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 
