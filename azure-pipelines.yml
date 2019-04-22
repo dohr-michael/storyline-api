@@ -31,23 +31,14 @@ steps:
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
   displayName: 'Set up the Go workspace'
-- task: DownloadGitHubRelease@0
-  inputs:
-    connection: github-download
-    userRepository: goreleaser/goreleaser
-    itemPattern: goreleaser_Linux_x86_64.tar.gz
-    downloadPath: $(GOPATH)/bin
-- task: ExtractFiles@1
-  inputs:
-    archiveFilePatterns: $(GOPATH)/bin/goreleaser_Linux_x86_64.tar.gz
-    destinationFolder: $(GOPATH)/bin
-    cleanDestinationFolder: false
 - script: |
     go mod download
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=${BUILD_REVISION} -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
-    ls -lsa '$(System.ArtifactsDirectory)'
-    ls -lsa
-  workingDirectory: '$(modulePath)'
+    ./main version
+  workingDirectory: 
+- task: PublishPipelineArtifact@0
+  inputs:
+    artifactName: 'storyline'
+    targetPath: '$(modulePath)/main'
   displayName: 'Deps, test and build'
-
