@@ -36,7 +36,7 @@ steps:
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=${BUILD_REVISION} -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
     ./main version
-  workingDirectory: 
+  workingDirectory: '$(modulePath)'
 - task: PublishPipelineArtifact@0
   inputs:
     artifactName: 'storyline'
