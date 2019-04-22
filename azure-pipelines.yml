@@ -38,7 +38,8 @@ steps:
     ./main version
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
-- task: PublishPipelineArtifact@0
+- task: Docker@2
   inputs:
-    artifactName: 'storyline'
-    targetPath: '$(modulePath)/main'
+    containerRegistry: '9c3233a9-8057-41a0-85ef-2b6050c1762e'
+    repository: 'registry.dohrm.com/storyline/api'
+    command: 'buildAndPush'
