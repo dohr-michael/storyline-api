@@ -36,12 +36,21 @@ steps:
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=$(BUILD_REVISION) -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
     docker build -t '$(build.repository.name):$(BUILD_VERSION)' .
-    docker save --output '$(build.repository.name)-$(BUILD_VERSION).tar' IMAGE '$(build.repository.name):$(BUILD_VERSION)'
+    docker save --output 'out.tar' IMAGE '$(build.repository.name):$(BUILD_VERSION)'
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
+- task: CopyFiles@2
+  inputs:
+    contents: '$(modulePath)/out.tar'
+    targetFolder: $(Build.ArtifactStagingDirectory)
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: $(Build.ArtifactStagingDirectory)
+    artifactName: image.tar
 - task: CopyFilesOverSSH@0
   inputs:
     sshEndpoint: '5bbaad95-ca76-475f-b1e6-f4cb0948d2e1'
     sourceFolder: '$(modulePath)'
     contents: '$(build.repository.name)-$(BUILD_VERSION).tar'
     targetFolder: 'archives'
+  condition: false
