@@ -15,6 +15,11 @@ variables:
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+  PROJECT_REPO: '$(build.repository.name)'
+  BUILD_VERSION: '$(Build.BuildNumber)'
+  BUILD_REVISION: '$(Build.SourceVersion)'
+  BUILD_TIME: '$(date +%Y-%m-%dT%H:%M:%S%z)'
+  CGO_ENABLED: '0'
 steps:
 - script: |
     mkdir -p '$(GOBIN)'
@@ -38,10 +43,10 @@ steps:
     destinationFolder: $(GOPATH)/bin
     cleanDestinationFolder: false
 - script: |
-    goreleaser --rm-dist --snapshot
-    cp ./dist/linux_amd64/* '$(System.ArtifactsDirectory)'
-    echo '$(System.ArtifactsDirectory)'
-    ls '$(System.ArtifactsDirectory)'
+    go mod download
+    go test ./...
+    go build --installsuffix cgo -ldflags="-s -w -X github.com/${PROJECT_REPO}/cmd.Version=${BUILD_VERSION} -X github.com/${PROJECT_REPO}/cmd.Revision=${BUILD_REVISION} -X github.com/${PROJECT_REPO}/cmd.Time=${BUILD_TIME}" ./...
+    ls -lsa
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 
