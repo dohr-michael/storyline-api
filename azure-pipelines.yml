@@ -36,7 +36,7 @@ steps:
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=$(BUILD_REVISION) -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
     docker build -t '$(build.repository.name):$(BUILD_VERSION)' .
-    docker save --output  IMAGE '$(build.repository.name):$(BUILD_VERSION)'
+    docker save --output '$(build.repository.name)-$(BUILD_VERSION).tar' IMAGE '$(build.repository.name):$(BUILD_VERSION)'
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
 - task: CopyFilesOverSSH@0
