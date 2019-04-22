@@ -43,3 +43,5 @@ steps:
     containerRegistry: '9c3233a9-8057-41a0-85ef-2b6050c1762e'
     repository: 'registry.dohrm.com/storyline/api'
     command: 'buildAndPush'
+    Dockerfile: '$(modulePath)/Dockerfile'
+    buildContext: '$(modulePath)'
