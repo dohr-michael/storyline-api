@@ -44,4 +44,4 @@ steps:
     command: 'buildAndPush'
     Dockerfile: '$(modulePath)/Dockerfile'
     buildContext: '$(modulePath)'
-    tags: '$(Build.BuildNumber)'
+    tags: '$(Build.BuildNumber),latest'
