@@ -35,13 +35,13 @@ steps:
     go mod download
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=$(BUILD_REVISION) -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
-    docker build -t storyline-api:$(Build.BuildNumber) .
   workingDirectory: '$(modulePath)'
   displayName: 'Deps, test and build'
-- task: CopyFilesOverSSH@0
+- task: Docker@2
   inputs:
-    sshEndpoint: '5bbaad95-ca76-475f-b1e6-f4cb0948d2e1'
-    sourceFolder: '$(modulePath)'
-    contents: '$(build.repository.name)-$(BUILD_VERSION).tar'
-    targetFolder: 'archives'
-  condition: false
+    containerRegistry: '7c445816-5f63-4280-bf35-972d9df907ab'
+    repository: 'storyline/api'
+    command: 'buildAndPush'
+    Dockerfile: '$(modulePath)/Dockerfile'
+    buildContext: '$(modulePath)'
+    tags: '$(Build.BuildNumber)'
