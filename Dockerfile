@@ -9,4 +9,4 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /.config.yml /.config.yml
 EXPOSE 8080
 
-CMD ["/storyline-api", "--config=/.config.yml", "start"]
+CMD ["/storyline-api", "--config=/.config.yml"]
