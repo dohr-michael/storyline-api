@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var configFile string
@@ -44,6 +45,24 @@ var rootCmd = &cobra.Command{
 		router.Get("/@/health", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"status": "OK"}`))
+		})
+		now := time.Now()
+		router.Get("/@/info", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(
+				fmt.Sprintf(
+					`{
+    "version": "%s",
+    "revision": "%s",
+    "build_at": "%s",
+    "started_at": "%s"
+}`,
+					config.Config.BuildVersion(),
+					config.Config.BuildRevision(),
+					config.Config.BuildTime(),
+					now.Format(time.RFC3339),
+				),
+			))
 		})
 
 		// Configure application.
