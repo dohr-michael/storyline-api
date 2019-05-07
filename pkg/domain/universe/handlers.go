@@ -19,6 +19,7 @@ const Collection = "Universes"
 
 type Handlers interface {
 	storage.ReadRepository
+	FetchTags(ctx context.Context) ([]Tag, error)
 	// Write
 	Create(payload *Create, ctx context.Context) (*Universe, error)
 }
@@ -34,6 +35,32 @@ func NewHandlers() (Handlers, error) {
 type arangoHandler struct{}
 
 // Search commands
+const fetchTagsQuery = `
+LET a = (FOR c IN @@collection RETURN c.tags[*])
+FOR t IN a[**]
+    SORT t ASC
+    RETURN DISTINCT { name: t }
+`
+
+func (h *arangoHandler) FetchTags(ctx context.Context) ([]Tag, error) {
+	// Check authorizations
+	userContext := core.GetUserContext(ctx)
+	if userContext == nil {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	d, err := arango.RunQuery(
+		ctx,
+		arango.NewRunQuery(fetchTagsQuery).WithParam("@collection", Collection),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var res []Tag
+	if err := data.Decode(d, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
 
 func (h *arangoHandler) FetchOne(id string, ctx context.Context) (storage.Entity, error) {
 	// Check authorizations
@@ -61,6 +88,10 @@ func (h *arangoHandler) FetchOne(id string, ctx context.Context) (storage.Entity
 }
 
 func (h *arangoHandler) FetchMany(query *filters.Query, ctx context.Context) (*storage.Paged, error) {
+	userContext := core.GetUserContext(ctx)
+	if userContext == nil {
+		return nil, fmt.Errorf("unauthorized")
+	}
 	return arango.Find(ctx,
 		&Universes{},
 		arango.
@@ -79,6 +110,7 @@ func (h *arangoHandler) FetchMany(query *filters.Query, ctx context.Context) (*s
 					string(relation.IsOwnerOf),
 				).WithFieldMapping("email", "_key"),
 			).
+			WithSortByDesc("createdAt").
 			WithQuery(query),
 	)
 }
@@ -87,14 +119,14 @@ func (h *arangoHandler) FetchMany(query *filters.Query, ctx context.Context) (*s
 const createQuery = `
 FOR u IN @@collection_users
     FILTER u._key == @creator
-    INSERT @data INTO @@collection
+    INSERT MERGE({createdAt:  DATE_NOW()}, @data) INTO @@collection
     LET inserted = NEW
     LET relations = [
         { _from: u._id, _to: inserted._id, kind: @is_owner_of },
         { _from: inserted._id, _to: u._id, kind: @created_by }
     ]
     LET ignored = (FOR r IN relations INSERT r INTO @@collection_relations)
-    RETURN MERGE(inserted, {createdBy: u})
+    RETURN MERGE(inserted, {createdBy: u, owner: u})
 `
 
 func (h *arangoHandler) Create(payload *Create, ctx context.Context) (*Universe, error) {

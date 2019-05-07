@@ -6,6 +6,7 @@ import (
 	"github.com/dohr-michael/storyline-api/pkg"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -37,9 +38,20 @@ var rootCmd = &cobra.Command{
 
 		// Configure base router
 		router := chi.NewMux()
+		// Middleware
+		corsMiddleware := cors.New(cors.Options{
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			ExposedHeaders:   []string{"Link"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		})
+
 		router.Use(
 			middleware.DefaultCompress,
 			middleware.DefaultLogger,
+			corsMiddleware.Handler,
 		)
 
 		router.Get("/@/health", func(w http.ResponseWriter, r *http.Request) {

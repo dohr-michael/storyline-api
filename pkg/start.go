@@ -165,6 +165,10 @@ func Start(
 			authMiddleware,
 			connectedUserMiddleware,
 		)
+		r.Options("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			_, _ = w.Write([]byte(`{"status": "OK"}`))
+		})
 		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Content-Type", "application/json; charset=utf-8")
 

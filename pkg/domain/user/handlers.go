@@ -95,9 +95,10 @@ func (h *arangoHandler) Save(payload *Save, ctx context.Context) (*User, error) 
 					"@collection": Collection,
 					"key":         payload.User.Email,
 					"data": map[string]interface{}{
-						"name":   payload.User.Name,
-						"locale": payload.User.Locale,
-						"gender": payload.User.Gender,
+						"name":    payload.User.Name,
+						"locale":  payload.User.Locale,
+						"gender":  payload.User.Gender,
+						"picture": payload.User.Picture,
 					},
 				},
 			),

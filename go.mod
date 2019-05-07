@@ -7,6 +7,7 @@ require (
 	github.com/dohr-michael/go-libs v0.7.0
 	github.com/dohrm/go-rsql v0.0.0-20181116171024-affefb5c7b4a
 	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/go-chi/cors v1.0.0
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/uuid v1.1.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190225005345-3e8838d4614c

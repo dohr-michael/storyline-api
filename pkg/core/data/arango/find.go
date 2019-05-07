@@ -3,6 +3,7 @@ package arango
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/dohr-michael/go-libs/errors"
 	"github.com/dohr-michael/go-libs/filters"
 	"github.com/dohr-michael/go-libs/storage"
@@ -10,13 +11,25 @@ import (
 	"github.com/dohrm/go-rsql"
 	"html/template"
 	"log"
+	"strings"
 )
+
+type sortDirection string
+
+const Asc = sortDirection("ASC")
+const Desc = sortDirection("DESC")
+
+type sorter struct {
+	by        string
+	direction sortDirection
+}
 
 type findParameters struct {
 	collection       string
 	expression       rsql.Expression
 	limit            int64
 	offset           int64
+	sortBy           []sorter
 	relationRequests []map[string]interface{}
 	mappings         map[string]string
 	relationKeys     []string
@@ -30,6 +43,7 @@ func NewFind(collection string) *findParameters {
 		mappings: map[string]string{
 			"_key": "_key",
 		},
+		sortBy:           []sorter{},
 		relationRequests: []map[string]interface{}{},
 	}
 }
@@ -78,6 +92,16 @@ func (p *findParameters) WithRelationRequests(request ...*relationRequest) *find
 	return p
 }
 
+func (p *findParameters) WithSortByAsc(by string) *findParameters {
+	p.sortBy = append(p.sortBy, sorter{by: by, direction: Asc})
+	return p
+}
+
+func (p *findParameters) WithSortByDesc(by string) *findParameters {
+	p.sortBy = append(p.sortBy, sorter{by: by, direction: Desc})
+	return p
+}
+
 const findTemplate = `
 let total = LENGTH(
 FOR c IN {{.collection}}
@@ -90,6 +114,7 @@ FOR c IN {{.collection}}
 	{{ range $k, $v := .relationRequests }}FOR {{$v.fieldName}}, edge{{$k}} IN 1..1 {{$v.direction}} c {{$v.collection}} FILTER edge{{$k}}.kind == "{{$v.kind}}"
 	{{end}}{{if .filter}}FILTER {{.filter}}
 	{{end}}LIMIT {{.offset}}, {{.limit}}
+	{{ if .sortBy }}SORT {{ .sortBy }}{{end}}
 	RETURN MERGE(c, { {{ range $k, $v := .relationRequests }}{{if $k}}, {{end}}{{$v.fieldName}}: {{$v.fieldName}}{{end}} })
 )
 RETURN {total: total, items: items}
@@ -106,8 +131,9 @@ func Find(ctx context.Context, result interface{}, params *findParameters) (*sto
 			},
 		},
 	}
+	const prefix = "c"
 
-	filterStr, args := RsqlToFilter("c",
+	filterStr, args := RsqlToFilter(prefix,
 		params.expression,
 		params.relationKeys,
 		params.mappings,
@@ -118,12 +144,18 @@ func Find(ctx context.Context, result interface{}, params *findParameters) (*sto
 	if err != nil {
 		return nil, err
 	}
+	var sortBy []string
+	for _, s := range params.sortBy {
+		sortBy = append(sortBy, fmt.Sprintf("%s.%s %s", prefix, s.by, s.direction))
+	}
+
 	err = t.Execute(&buffer, map[string]interface{}{
 		"collection":       params.collection,
 		"offset":           params.offset,
 		"limit":            params.limit,
 		"relationRequests": params.relationRequests,
 		"filter":           filterStr,
+		"sortBy":           strings.Join(sortBy, ","),
 	})
 	if err != nil {
 		return nil, err

@@ -24,9 +24,11 @@ func (p *rsqlParser) expressionToFilter(prefix string, expression rsql.Expressio
 	case rsql.NotEqualsComparison:
 		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "!=", path)
 	case rsql.LikeComparison:
-		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "=~", path)
+		return p.comparisonToRegex(prefix, t.Identifier, t.Val, path, "")
+		// return p.comparisonToFilter(prefix, t.Identifier, t.Val, "=~", path)
 	case rsql.NotLikeComparison:
-		return p.comparisonToFilter(prefix, t.Identifier, t.Val, "!~", path)
+		return p.comparisonToRegex(prefix, t.Identifier, t.Val, path, "!")
+		// return p.comparisonToFilter(prefix, t.Identifier, t.Val, "!~", path)
 	case rsql.GreaterThanComparison:
 		return p.comparisonToFilter(prefix, t.Identifier, t.Val, ">", path)
 	case rsql.GreaterThanOrEqualsComparison:
@@ -78,19 +80,36 @@ func (p *rsqlParser) toValue(v rsql.Value) interface{} {
 	}
 }
 
-func (p *rsqlParser) comparisonToFilter(prefix string, field rsql.Identifier, value rsql.Value, comparator string, path string) string {
-	p.variables[path] = p.toValue(value)
-	inRelation := false
-	fieldName := field.Val
+func (p *rsqlParser) inRelation(field rsql.Identifier) bool {
 	for _, r := range p.relations {
-		if strings.HasPrefix(fieldName, r) {
-			inRelation = true
-			break
+		if strings.HasPrefix(field.Val, r) {
+			return true
 		}
 	}
-	if p.mappings[fieldName] != "" {
-		fieldName = p.mappings[fieldName]
+	return false
+}
+
+func (p *rsqlParser) toFieldName(field rsql.Identifier) string {
+	if p.mappings[field.Val] != "" {
+		return p.mappings[field.Val]
 	}
+	return field.Val
+}
+
+func (p *rsqlParser) comparisonToRegex(prefix string, field rsql.Identifier, value rsql.Value, path string, regexPrefix string) string {
+	p.variables[path] = fmt.Sprintf(`%s^%s$`, regexPrefix, p.toValue(value))
+	inRelation := p.inRelation(field)
+	fieldName := p.toFieldName(field)
+	if inRelation {
+		return fmt.Sprintf(`REGEX_TEST(%s, @%s, true)`, fieldName, path)
+	}
+	return fmt.Sprintf(`REGEX_TEST(%s.%s, @%s, true)`, prefix, fieldName, path)
+}
+
+func (p *rsqlParser) comparisonToFilter(prefix string, field rsql.Identifier, value rsql.Value, comparator string, path string) string {
+	p.variables[path] = p.toValue(value)
+	inRelation := p.inRelation(field)
+	fieldName := p.toFieldName(field)
 	if inRelation {
 		return fmt.Sprintf("%s %s @%s", fieldName, comparator, path)
 	}

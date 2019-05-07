@@ -25,10 +25,40 @@ var universeType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"name": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Name of the user",
+			Description: "Name of the universe",
 			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
 				if universe, ok := p.Source.(*universe.Universe); ok {
 					return universe.Name, nil
+				}
+				return nil, nil
+			},
+		},
+		"description": &graphql.Field{
+			Type:        graphql.NewNonNull(graphql.String),
+			Description: "Description of the universe",
+			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
+				if universe, ok := p.Source.(*universe.Universe); ok {
+					return universe.Description, nil
+				}
+				return nil, nil
+			},
+		},
+		"picture": &graphql.Field{
+			Type:        graphql.String,
+			Description: "Picture of the universe, can be url of base64 image",
+			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
+				if universe, ok := p.Source.(*universe.Universe); ok {
+					return universe.Picture, nil
+				}
+				return nil, nil
+			},
+		},
+		"tags": &graphql.Field{
+			Type:        graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(graphql.String))),
+			Description: "Tags of the universe",
+			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
+				if universe, ok := p.Source.(*universe.Universe); ok {
+					return universe.Tags, nil
 				}
 				return nil, nil
 			},
@@ -52,6 +82,25 @@ var universeType = graphql.NewObject(graphql.ObjectConfig{
 				}
 				return nil, nil
 			},
+		},
+	},
+})
+
+var createUniverseInputType = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name:        "CreateUniverseInput",
+	Description: "",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"name": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"description": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"picture": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"tags": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewList(graphql.NewNonNull(graphql.String)),
 		},
 	},
 })

@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/dohr-michael/storyline-api/pkg/core/data"
 	"github.com/dohr-michael/storyline-api/pkg/domain/universe"
 	"github.com/graphql-go/graphql"
 )
@@ -11,9 +12,9 @@ var mutation = graphql.NewObject(graphql.ObjectConfig{
 		"createUniverse": &graphql.Field{
 			Type: graphql.NewNonNull(universeType),
 			Args: graphql.FieldConfigArgument{
-				"name": &graphql.ArgumentConfig{
+				"input": &graphql.ArgumentConfig{
 					Description: "Name of the universe",
-					Type:        graphql.NewNonNull(graphql.String),
+					Type:        graphql.NewNonNull(createUniverseInputType),
 				},
 			},
 			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
@@ -21,10 +22,13 @@ var mutation = graphql.NewObject(graphql.ObjectConfig{
 				if err != nil {
 					return nil, err
 				}
+				input := universe.Create{}
+				err = data.Decode(p.Args["input"], &input)
+				if err != nil {
+					return nil, err
+				}
 				return repo.Create(
-					&universe.Create{
-						Name: p.Args["name"].(string),
-					},
+					&input,
 					p.Context,
 				)
 			},

@@ -33,6 +33,16 @@ var userType = graphql.NewObject(graphql.ObjectConfig{
 				return nil, nil
 			},
 		},
+		"picture": &graphql.Field{
+			Type:        graphql.String,
+			Description: "Picture of the user, can be url of base64 image",
+			Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
+				if user, ok := p.Source.(*user.User); ok {
+					return user.Picture, nil
+				}
+				return nil, nil
+			},
+		},
 		"createdAt": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.DateTime),
 			Description: "Creation date",

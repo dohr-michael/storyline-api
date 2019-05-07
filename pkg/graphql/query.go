@@ -5,7 +5,6 @@ import (
 	"github.com/dohr-michael/storyline-api/pkg/domain/universe"
 	"github.com/dohr-michael/storyline-api/pkg/domain/user"
 	"github.com/graphql-go/graphql"
-	"log"
 )
 
 func searchUsersQuery() *graphql.Field {
@@ -24,7 +23,6 @@ func universeByIdQuery() *graphql.Field {
 	base := lgraphql.ById("id", universeType, UniverseRepoKey)
 	// baseResolver := base.Resolve
 	base.Resolve = func(p graphql.ResolveParams) (i interface{}, e error) {
-		log.Printf("%v", p.Info.Path.AsArray())
 		return &universe.Universe{
 			Owner: &user.User{},
 		}, nil
@@ -32,12 +30,34 @@ func universeByIdQuery() *graphql.Field {
 	return base
 }
 
+func listUniverseTags() *graphql.Field {
+	return &graphql.Field{
+		Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(graphql.String))),
+		Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
+			repo, err := universeRepo(p.Context)
+			if err != nil {
+				return nil, err
+			}
+			tags, err := repo.FetchTags(p.Context)
+			if err != nil {
+				return nil, err
+			}
+			var res []string
+			for _, r := range tags {
+				res = append(res, r.Name)
+			}
+			return res, nil
+		},
+	}
+}
+
 var query = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Query",
 	Fields: graphql.Fields{
-		"searchUsers":     searchUsersQuery(),
-		"searchUniverses": searchUniversesQuery(),
-		"userByEmail":     userByEmailQuery(),
-		"universeById":    universeByIdQuery(),
+		"users":        searchUsersQuery(),
+		"universes":    searchUniversesQuery(),
+		"universeTags": listUniverseTags(),
+		"user":         userByEmailQuery(),
+		"universe":     universeByIdQuery(),
 	},
 })
