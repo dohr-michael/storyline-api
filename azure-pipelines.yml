@@ -35,9 +35,14 @@ steps:
     go mod download
     go test ./...
     go build --installsuffix cgo -ldflags="-s -w -X github.com/$(PROJECT_REPO)/cmd.Version=$(BUILD_VERSION) -X github.com/$(PROJECT_REPO)/cmd.Revision=$(BUILD_REVISION) -X github.com/$(PROJECT_REPO)/cmd.Time=$(BUILD_TIME)" main.go
+  workingDirectory: '$(modulePath)'
+  displayName: 'Deps, test and build'
+
+- script: |
     docker build -t '$(registry-id)/storyline/api:$(Build.BuildNumber)' .
     docker tag '$(registry-id)/storyline/api:$(Build.BuildNumber)' '$(registry-id)/storyline/api:latest'
     docker login -u '$(vps-user)' -p '$(vps-password)' '$(registry-id)'
     docker push '$(registry-id)/storyline/api'
   workingDirectory: '$(modulePath)'
-  displayName: 'Deps, test and build'
+  displayName: 'Generate Container'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
