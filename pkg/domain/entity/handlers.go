@@ -1,15 +1,15 @@
-package universe
+package entity
 
 import (
 	"github.com/arangodb/go-driver"
 	"github.com/dohr-michael/storyline-api/pkg/core/data/arango"
 )
 
-const Collection = "Universes"
+const Collection = "Entities"
 
 type Handlers interface {
-	QueryHandlers
 	MutationHandlers
+	QueryHandlers
 }
 
 func NewHandlers() (Handlers, error) {
@@ -17,13 +17,13 @@ func NewHandlers() (Handlers, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &arangoHandler{
+	return &arangoHandlers{
 		arangoQueryHandlers:    &arangoQueryHandlers{},
 		arangoMutationHandlers: &arangoMutationHandlers{},
 	}, nil
 }
 
-type arangoHandler struct {
+type arangoHandlers struct {
 	*arangoQueryHandlers
 	*arangoMutationHandlers
 }

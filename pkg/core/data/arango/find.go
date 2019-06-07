@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/dohr-michael/go-libs/errors"
 	"github.com/dohr-michael/go-libs/filters"
-	"github.com/dohr-michael/go-libs/storage"
 	"github.com/dohr-michael/storyline-api/pkg/core/data"
 	"github.com/dohrm/go-rsql"
 	"html/template"
@@ -120,17 +119,7 @@ FOR c IN {{.collection}}
 RETURN {total: total, items: items}
 `
 
-func Find(ctx context.Context, result interface{}, params *findParameters) (*storage.Paged, error) {
-	res := &storage.Paged{
-		Items: result,
-		Query: &filters.Query{
-			Filter: params.expression,
-			Pager: filters.Pager{
-				Limit:  params.limit,
-				Offset: params.offset,
-			},
-		},
-	}
+func Find(ctx context.Context, result interface{}, params *findParameters) (int64, error) {
 	const prefix = "c"
 
 	filterStr, args := RsqlToFilter(prefix,
@@ -142,7 +131,7 @@ func Find(ctx context.Context, result interface{}, params *findParameters) (*sto
 	buffer := bytes.Buffer{}
 	t, err := template.New("findManyQuery").Parse(findTemplate)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	var sortBy []string
 	for _, s := range params.sortBy {
@@ -158,7 +147,7 @@ func Find(ctx context.Context, result interface{}, params *findParameters) (*sto
 		"sortBy":           strings.Join(sortBy, ","),
 	})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	for k, v := range args {
 		log.Printf("%s = %v", k, v)
@@ -170,23 +159,21 @@ func Find(ctx context.Context, result interface{}, params *findParameters) (*sto
 		NewRunQuery(buffer.String()).WithParams(args),
 	)
 	if err != nil {
-		return nil, err
+		return 0, err
 	} else if len(items) == 0 {
-		return nil, errors.NotFoundError
+		return 0, errors.NotFoundError
 	}
 
 	doc := items[0]
 	s, ok := doc["items"].([]interface{})
 	if !ok {
-		return nil, errors.NotFoundError
+		return 0, errors.NotFoundError
 	}
 	err = data.Decode(&s, &result)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	res.Total = int64(doc["total"].(float64))
-
-	return res, nil
+	return int64(doc["total"].(float64)), nil
 }

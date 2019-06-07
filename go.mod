@@ -10,9 +10,11 @@ require (
 	github.com/go-chi/cors v1.0.0
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/uuid v1.1.0
-	github.com/graph-gophers/graphql-go v0.0.0-20190225005345-3e8838d4614c
+	github.com/graph-gophers/graphql-go v0.0.0-20190505214454-b068bc17d45b
 	github.com/graphql-go/graphql v0.7.8
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jteeuwen/go-bindata v3.0.7+incompatible // indirect
+	github.com/looplab/eventhorizon v0.5.0 // indirect
 	github.com/magefile/mage v1.8.0
 	github.com/magiconair/properties v1.8.0
 	github.com/mitchellh/mapstructure v1.1.2

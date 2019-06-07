@@ -20,4 +20,28 @@ type Universe struct {
 	CreatedAt   time.Time  `json:"createdAt" mapstructure:"createdAt"`
 	CreatedBy   *user.User `json:"-" mapstructure:"createdBy"`
 }
+
 type Universes []*Universe
+
+type PagedUniverse struct {
+	Items  *Universes
+	Total  int64
+	Limit  int64
+	Offset int64
+}
+
+func (t *PagedUniverse) GetItems() interface{} {
+	return t.Items
+}
+
+func (t *PagedUniverse) GetTotal() int64 {
+	return t.Total
+}
+
+func (t *PagedUniverse) GetLimit() int64 {
+	return t.Limit
+}
+
+func (t *PagedUniverse) GetOffset() int64 {
+	return t.Offset
+}

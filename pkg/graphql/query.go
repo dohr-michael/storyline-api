@@ -1,44 +1,40 @@
 package graphql
 
 import (
-	lgraphql "github.com/dohr-michael/go-libs/graphql"
-	"github.com/dohr-michael/storyline-api/pkg/domain/universe"
-	"github.com/dohr-michael/storyline-api/pkg/domain/user"
+	"context"
+	"github.com/dohr-michael/go-libs/filters"
 	"github.com/graphql-go/graphql"
 )
 
-func searchUsersQuery() *graphql.Field {
-	return lgraphql.PagedQuery("Users", userType, UserRepoKey)
+func universesQuery() *graphql.Field {
+	return pagedQuery("Universes", universeType, func(query *filters.Query, ctx context.Context) (interface{}, error) {
+		rep, err := universeRepo(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return rep.FetchMany(query, ctx)
+	})
 }
 
-func userByEmailQuery() *graphql.Field {
-	return lgraphql.ById("email", userType, UserRepoKey)
+func universeQuery() *graphql.Field {
+	return byIdQuery("id", universeType, func(id string, ctx context.Context) (interface{}, error) {
+		rep, err := universeRepo(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return rep.FetchOne(id, ctx)
+	})
 }
 
-func searchUniversesQuery() *graphql.Field {
-	return lgraphql.PagedQuery("Universes", universeType, UniverseRepoKey)
-}
-
-func universeByIdQuery() *graphql.Field {
-	base := lgraphql.ById("id", universeType, UniverseRepoKey)
-	// baseResolver := base.Resolve
-	base.Resolve = func(p graphql.ResolveParams) (i interface{}, e error) {
-		return &universe.Universe{
-			Owner: &user.User{},
-		}, nil
-	}
-	return base
-}
-
-func listUniverseTags() *graphql.Field {
+func universeTagsQuery() *graphql.Field {
 	return &graphql.Field{
 		Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(graphql.String))),
 		Resolve: func(p graphql.ResolveParams) (i interface{}, e error) {
-			repo, err := universeRepo(p.Context)
+			rep, err := universeRepo(p.Context)
 			if err != nil {
 				return nil, err
 			}
-			tags, err := repo.FetchTags(p.Context)
+			tags, err := rep.FetchTags(p.Context)
 			if err != nil {
 				return nil, err
 			}
@@ -54,10 +50,8 @@ func listUniverseTags() *graphql.Field {
 var query = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Query",
 	Fields: graphql.Fields{
-		"users":        searchUsersQuery(),
-		"universes":    searchUniversesQuery(),
-		"universeTags": listUniverseTags(),
-		"user":         userByEmailQuery(),
-		"universe":     universeByIdQuery(),
+		"universe":     universeQuery(),
+		"universes":    universesQuery(),
+		"universeTags": universeTagsQuery(),
 	},
 })
